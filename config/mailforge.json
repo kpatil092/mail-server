@@ -1,0 +1,10 @@
+{
+  "host": "0.0.0.0",
+  "port": 2525,
+  "thread_pool": 4,
+  "database": "mailforge.db",
+  "mail_directory": "mail/",
+  "log_level": "info",
+  "max_connections": 500,
+  "server_name": "mailforge.local"
+}

@@ -1,0 +1,14 @@
+build/
+cmake-build-*/
+.venv/
+.cache/
+logs/
+mail/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+*.pem
+*.key
+*.crt
+compile_commands.json

@@ -6,5 +6,8 @@
   "mail_directory": "mail/",
   "log_level": "info",
   "max_connections": 500,
-  "server_name": "mailforge.local"
+  "server_name": "mailforge.local",
+  "tls_certificate": "config/server.crt",
+  "tls_private_key": "config/server.key",
+  "pop3_port": 1100
 }

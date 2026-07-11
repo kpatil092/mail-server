@@ -5,27 +5,39 @@ project(MailForge VERSION 0.1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(MAILFORGE_BUILD_TESTS "Build MailForge tests" ON)
 
 find_package(Boost 1.74 REQUIRED)
 find_package(Threads REQUIRED)
+find_package(SQLite3 REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 add_library(mailforge_core
     src/app/Application.cpp
     src/config/ConfigManager.cpp
+    src/database/DatabaseManager.cpp
     src/logging/Logger.cpp
     src/mime/MailMessage.cpp
+    src/mime/MimeParser.cpp
     src/network/ClientSession.cpp
     src/network/TcpListener.cpp
     src/smtp/SMTPParser.cpp
     src/smtp/SMTPStateMachine.cpp
+    src/smtp/SmtpClient.cpp
     src/storage/MailStorage.cpp
+    src/queue/QueueManager.cpp
+    src/pop3/Pop3StateMachine.cpp
+    src/pop3/Pop3Server.cpp
+    src/utils/Base64.cpp
 )
 
 target_include_directories(mailforge_core
     PUBLIC
         ${PROJECT_SOURCE_DIR}/include
+        ${SQLite3_INCLUDE_DIRS}
+        ${OPENSSL_INCLUDE_DIR}
 )
 
 target_compile_options(mailforge_core PRIVATE
@@ -36,10 +48,16 @@ target_link_libraries(mailforge_core
     PUBLIC
         Boost::headers
         Threads::Threads
+        ${SQLite3_LIBRARIES}
+        ${OPENSSL_LIBRARIES}
 )
 
 add_executable(mailforge src/main.cpp)
-target_link_libraries(mailforge PRIVATE mailforge_core)
+target_link_libraries(mailforge 
+    PRIVATE 
+        mailforge_core
+        ${SQLite3_LIBRARIES}
+)
 
 if(MAILFORGE_BUILD_TESTS)
     enable_testing()

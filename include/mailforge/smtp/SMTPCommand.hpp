@@ -13,6 +13,8 @@ enum class CommandType {
     quit,
     noop,
     rset,
+    auth,
+    starttls,
     unknown
 };
 

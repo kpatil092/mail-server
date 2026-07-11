@@ -12,3 +12,7 @@ mail/
 *.key
 *.crt
 compile_commands.json
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/

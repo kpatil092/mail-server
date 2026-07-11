@@ -15,6 +15,9 @@ struct ServerConfig {
     std::string log_level{"info"};
     std::size_t max_connections{500};
     std::string server_name{"mailforge.local"};
+    std::string tls_certificate{""};
+    std::string tls_private_key{""};
+    std::uint16_t pop3_port{1100};
 };
 
 } // namespace mailforge::config

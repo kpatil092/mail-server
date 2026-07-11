@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MailForge Web Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased">
+
+    <!-- Auth Card (Hidden by default, shown if logged out) -->
+    <div id="auth-container" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950">
+        <div class="glass w-full max-w-md rounded-3xl p-8 shadow-2xl space-y-6">
+            <div class="text-center">
+                <div class="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-brand-500/20 mb-4">
+                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l8-5.333a2 2 0 012.22 0l8 5.333A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76"></path></svg>
+                </div>
+                <h2 id="auth-title" class="text-2xl font-bold tracking-tight text-slate-100">Welcome to MailForge</h2>
+                <p id="auth-subtitle" class="text-xs text-slate-400 mt-1">Please sign in to your mail account</p>
+            </div>
+
+            <form id="auth-form" onsubmit="handleAuth(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Username</label>
+                    <input type="text" id="auth-username" placeholder="username" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 text-slate-100" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Password</label>
+                    <input type="password" id="auth-password" placeholder="••••••••" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500 text-slate-100" required>
+                </div>
+                <button type="submit" id="auth-submit-btn" class="w-full py-3 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-500 rounded-xl transition duration-200 shadow-lg shadow-brand-600/10">Sign In</button>
+            </form>
+
+            <div class="text-center text-xs text-slate-400">
+                <span id="auth-toggle-text">Don't have a mailbox yet?</span>
+                <button onclick="toggleAuthMode()" id="auth-toggle-link" class="text-brand-500 hover:underline font-semibold ml-1">Create Account</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Content (Hidden until authenticated) -->
+    <div id="dashboard-container" class="hidden flex flex-col min-h-screen">
+        <!-- Header -->
+        <header class="glass sticky top-0 z-40 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-brand-500/20">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l8-5.333a2 2 0 012.22 0l8 5.333A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76"></path></svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">MailForge</h1>
+                    <p class="text-xs text-slate-400 font-medium">Asynchronous Mail Server Dashboard</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2 bg-slate-900 border border-slate-800 px-3.5 py-1.5 rounded-xl text-xs font-semibold">
+                    <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+                    <span class="text-slate-400">Logged in as:</span>
+                    <span class="text-slate-100" id="current-user-tag">admin</span>
+                </div>
+                <button onclick="openCompose()" class="px-4 py-2 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-500 rounded-xl transition duration-200 shadow-md shadow-brand-600/10 flex items-center space-x-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    <span>Compose Mail</span>
+                </button>
+                <button onclick="handleLogout()" class="px-4 py-2 text-sm font-semibold text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl transition duration-200">
+                    Logout
+                </button>
+                <button onclick="refreshAll()" class="p-2 text-slate-400 hover:text-white rounded-xl bg-slate-900 border border-slate-800 transition duration-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M9 11l3 3L22 4"></path></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="flex-1 max-w-7xl w-full mx-auto p-6 grid grid-cols-12 gap-6">
+            
+            <!-- Left Panel: Users & Inboxes -->
+            <div class="col-span-3 flex flex-col space-y-4" id="left-panel">
+                <div class="glass rounded-2xl p-4 flex-1 flex flex-col">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3">User Mailboxes</h2>
+                    <div id="user-list" class="space-y-1 overflow-y-auto flex-1">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Panel: Messages list & body viewer -->
+            <div class="col-span-6 flex flex-col space-y-4" id="center-panel">
+                <div class="glass rounded-2xl p-4 flex-1 flex flex-col min-h-[500px]">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+                        <h2 class="text-lg font-bold" id="inbox-title">Inbox</h2>
+                        <span id="inbox-count" class="text-xs px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-400 font-semibold">0 messages</span>
+                    </div>
+                    <div id="message-list" class="space-y-2 overflow-y-auto flex-1 pr-1">
+                        <!-- Dynamic message cards -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Queue Monitor -->
+            <div class="col-span-3 flex flex-col space-y-4" id="right-panel">
+                <div class="glass rounded-2xl p-4 flex-1 flex flex-col">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3">Outgoing Queue</h2>
+                    <div id="queue-list" class="space-y-2 overflow-y-auto flex-1 pr-1">
+                        <!-- Dynamic queue cards -->
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Compose Modal -->
+    <div id="compose-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div class="glass w-full max-w-lg rounded-2xl p-6 shadow-2xl relative">
+            <h2 class="text-lg font-bold mb-4">Compose Email</h2>
+            <button onclick="closeCompose()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <form id="compose-form" onsubmit="sendMail(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">From</label>
+                    <input type="text" id="mail-from" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-500 cursor-not-allowed" readonly>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">To</label>
+                    <input type="text" id="mail-to" placeholder="recipient@domain.com or local user" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-500 text-slate-100" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Subject</label>
+                    <input type="text" id="mail-subject" placeholder="Subject" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-500 text-slate-100" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Body</label>
+                    <textarea id="mail-body" rows="6" placeholder="Write mail here..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-500 text-slate-100" required></textarea>
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" onclick="closeCompose()" class="px-4 py-2 text-sm font-semibold rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300">Cancel</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-semibold rounded-xl bg-brand-600 hover:bg-brand-500 text-white shadow-lg shadow-brand-600/10">Send Mail</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Email Viewer Modal -->
+    <div id="viewer-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div class="glass w-full max-w-2xl rounded-2xl p-6 shadow-2xl relative">
+            <button onclick="closeViewer()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <div class="border-b border-slate-800 pb-4 mb-4">
+                <h2 class="text-xl font-bold" id="view-subject">Subject</h2>
+                <div class="flex justify-between text-xs text-slate-400 mt-2">
+                    <span>From: <strong id="view-from"></strong></span>
+                    <span id="view-date">Date</span>
+                </div>
+            </div>
+            <div id="view-body" class="bg-slate-900 rounded-xl p-4 text-sm text-slate-300 min-h-[200px] max-h-[400px] overflow-y-auto whitespace-pre-wrap">
+                Content
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let activeMailboxUser = null;
+        let isRegisterMode = false;
+
+        async function checkSession() {
+            try {
+                const response = await fetch('/api/me');
+                const result = await response.json();
+                if (result.logged_in) {
+                    currentUser = result.username;
+                    showDashboard();
+                } else {
+                    showAuth();
+                }
+            } catch (e) {
+                console.error("Session check failed", e);
+            }
+        }
+
+        function showAuth() {
+            document.getElementById('auth-container').classList.remove('hidden');
+            document.getElementById('dashboard-container').classList.add('hidden');
+        }
+
+        function showDashboard() {
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('dashboard-container').classList.remove('hidden');
+            document.getElementById('current-user-tag').innerText = currentUser;
+            document.getElementById('mail-from').value = currentUser;
+
+            // Security layout constraint check
+            if (currentUser !== 'admin') {
+                // Non-admins can only view their own inbox
+                document.getElementById('left-panel').classList.add('hidden');
+                document.getElementById('center-panel').className = "col-span-9 flex flex-col space-y-4";
+                activeMailboxUser = currentUser;
+                document.getElementById('inbox-title').innerText = `Inbox (${currentUser})`;
+            } else {
+                document.getElementById('left-panel').classList.remove('hidden');
+                document.getElementById('center-panel').className = "col-span-6 flex flex-col space-y-4";
+            }
+            refreshAll();
+        }
+
+        function toggleAuthMode() {
+            isRegisterMode = !isRegisterMode;
+            document.getElementById('auth-title').innerText = isRegisterMode ? "Create Mailbox" : "Welcome to MailForge";
+            document.getElementById('auth-subtitle').innerText = isRegisterMode ? "Register a new local account" : "Please sign in to your mail account";
+            document.getElementById('auth-submit-btn').innerText = isRegisterMode ? "Register" : "Sign In";
+            document.getElementById('auth-toggle-text').innerText = isRegisterMode ? "Already have a mailbox?" : "Don't have a mailbox yet?";
+            document.getElementById('auth-toggle-link').innerText = isRegisterMode ? "Sign In" : "Create Account";
+            document.getElementById('auth-form').reset();
+        }
+
+        async function handleAuth(event) {
+            event.preventDefault();
+            const username = document.getElementById('auth-username').value;
+            const password = document.getElementById('auth-password').value;
+            const url = isRegisterMode ? '/api/register' : '/api/login';
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    currentUser = result.username;
+                    showDashboard();
+                } else {
+                    alert("Authentication failed: " + result.error);
+                }
+            } catch (e) {
+                alert("Server connection failed");
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                const response = await fetch('/api/logout', { method: 'POST' });
+                const result = await response.json();
+                if (result.success) {
+                    currentUser = null;
+                    activeMailboxUser = null;
+                    showAuth();
+                }
+            } catch (e) {
+                console.error("Logout failed", e);
+            }
+        }
+
+        async function fetchUsers() {
+            if (currentUser !== 'admin') return;
+            try {
+                const response = await fetch('/api/users');
+                const users = await response.json();
+                const container = document.getElementById('user-list');
+                
+                if (users.length === 0) {
+                    container.innerHTML = '<p class="text-slate-500 text-xs py-4 text-center">No registered users.</p>';
+                    return;
+                }
+
+                container.innerHTML = users.map(user => `
+                    <button onclick="selectUser('${user}')" class="w-full text-left px-3 py-2.5 rounded-xl transition duration-200 flex items-center space-x-2 text-sm ${user === activeMailboxUser ? 'bg-brand-600/10 text-brand-500 border border-brand-500/20' : 'hover:bg-slate-900 border border-transparent'}">
+                        <div class="w-6 h-6 rounded-lg bg-slate-800 flex items-center justify-center font-bold text-xs uppercase text-slate-300">${user[0]}</div>
+                        <span class="font-medium">${user}</span>
+                    </button>
+                `).join('');
+                
+                if (!activeMailboxUser && users.length > 0) {
+                    selectUser(users[0]);
+                }
+            } catch (e) {
+                console.error("Failed to fetch users", e);
+            }
+        }
+
+        async function selectUser(username) {
+            activeMailboxUser = username;
+            document.getElementById('inbox-title').innerText = `Inbox (${username})`;
+            fetchUsers();
+            fetchMessages();
+        }
+
+        async function fetchMessages() {
+            const targetUser = activeMailboxUser || currentUser;
+            if (!targetUser) return;
+            try {
+                const response = await fetch(`/api/messages/${targetUser}`);
+                const messages = await response.json();
+                const container = document.getElementById('message-list');
+                document.getElementById('inbox-count').innerText = `${messages.length} messages`;
+
+                if (messages.length === 0) {
+                    container.innerHTML = '<p class="text-slate-500 text-sm text-center py-12">No messages received.</p>';
+                    return;
+                }
+
+                container.innerHTML = messages.map(msg => `
+                    <div onclick="openViewer(${JSON.stringify(msg).replace(/"/g, '&quot;')})" class="bg-slate-900/40 hover:bg-slate-900 border border-slate-800/60 p-4 rounded-xl cursor-pointer transition duration-150 flex flex-col space-y-1">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-brand-500">${msg.sender}</span>
+                            <span class="text-[10px] text-slate-500 font-medium">${msg.timestamp}</span>
+                        </div>
+                        <h3 class="font-semibold text-sm text-slate-100">${msg.subject}</h3>
+                        <p class="text-xs text-slate-400 line-clamp-1">${msg.body.substring(0, 100)}</p>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function fetchQueue() {
+            try {
+                const response = await fetch('/api/queue');
+                const queue = await response.json();
+                const container = document.getElementById('queue-list');
+
+                if (queue.length === 0) {
+                    container.innerHTML = '<p class="text-slate-500 text-xs text-center py-12">No pending emails in the delivery queue.</p>';
+                    return;
+                }
+
+                container.innerHTML = queue.map(item => `
+                    <div class="bg-slate-900/30 border border-slate-800 p-3 rounded-xl flex flex-col space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${item.status === 'pending' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'} uppercase">${item.status}</span>
+                            <span class="text-[10px] text-slate-500">Attempts: ${item.attempts}</span>
+                        </div>
+                        <h4 class="text-xs font-bold text-slate-200 truncate">${item.subject}</h4>
+                        <div class="text-[10px] text-slate-400">To: <span class="font-semibold">${item.recipient}</span></div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function openCompose() {
+            document.getElementById('compose-modal').classList.remove('hidden');
+        }
+
+        function closeCompose() {
+            document.getElementById('compose-modal').classList.add('hidden');
+            document.getElementById('compose-form').reset();
+            document.getElementById('mail-from').value = currentUser;
+        }
+
+        function openViewer(msg) {
+            document.getElementById('view-subject').innerText = msg.subject;
+            document.getElementById('view-from').innerText = msg.sender;
+            document.getElementById('view-date').innerText = msg.timestamp;
+            document.getElementById('view-body').innerText = msg.body;
+            document.getElementById('viewer-modal').classList.remove('hidden');
+        }
+
+        function closeViewer() {
+            document.getElementById('viewer-modal').classList.add('hidden');
+        }
+
+        async function sendMail(event) {
+            event.preventDefault();
+            const recipient = document.getElementById('mail-to').value;
+            const subject = document.getElementById('mail-subject').value;
+            const body = document.getElementById('mail-body').value;
+
+            try {
+                const response = await fetch('/api/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ recipient, subject, body })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    closeCompose();
+                    refreshAll();
+                } else {
+                    alert("Error: " + result.error);
+                }
+            } catch (e) {
+                alert("Failed to connect to SMTP server");
+            }
+        }
+
+        function refreshAll() {
+            if (!currentUser) return;
+            fetchUsers();
+            fetchQueue();
+            fetchMessages();
+        }
+
+        // Init session check
+        checkSession();
+        setInterval(() => {
+            if (currentUser) {
+                fetchQueue();
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

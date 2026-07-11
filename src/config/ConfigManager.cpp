@@ -46,6 +46,9 @@ ServerConfig ConfigManager::load(const std::filesystem::path& path) const {
     config.log_level = string_value(document, "log_level", config.log_level);
     config.max_connections = number_value(document, "max_connections", config.max_connections);
     config.server_name = string_value(document, "server_name", config.server_name);
+    config.tls_certificate = string_value(document, "tls_certificate", config.tls_certificate);
+    config.tls_private_key = string_value(document, "tls_private_key", config.tls_private_key);
+    config.pop3_port = static_cast<std::uint16_t>(number_value(document, "pop3_port", config.pop3_port));
 
     if (config.port == 0) {
         throw std::runtime_error("Config value 'port' must be between 1 and 65535");
@@ -55,6 +58,9 @@ ServerConfig ConfigManager::load(const std::filesystem::path& path) const {
     }
     if (config.max_connections == 0) {
         throw std::runtime_error("Config value 'max_connections' must be at least 1");
+    }
+    if (config.pop3_port == 0) {
+        throw std::runtime_error("Config value 'pop3_port' must be between 1 and 65535");
     }
 
     return config;

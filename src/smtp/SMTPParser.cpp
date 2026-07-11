@@ -67,6 +67,10 @@ SMTPCommand SMTPParser::parse_line(std::string_view line) const {
         command.type = CommandType::noop;
     } else if (verb == "RSET") {
         command.type = CommandType::rset;
+    } else if (verb == "AUTH") {
+        command.type = CommandType::auth;
+    } else if (verb == "STARTTLS") {
+        command.type = CommandType::starttls;
     }
 
     return command;

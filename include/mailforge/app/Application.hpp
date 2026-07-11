@@ -5,13 +5,12 @@
 namespace mailforge::app {
 
 class Application {
-public:
-    explicit Application(config::ServerConfig config);
-
-    int run();
-
 private:
     config::ServerConfig config_;
+public:
+    explicit Application(config::ServerConfig config);
+    int run();
 };
 
-} // namespace mailforge::app
+} 
+// namespace mailforge::app
